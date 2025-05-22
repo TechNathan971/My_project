@@ -20,14 +20,14 @@ import type { Product, Category } from "@shared/schema";
 export default function Products() {
   const [location] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
 
   // Parse URL parameters
   useEffect(() => {
     const params = new URLSearchParams(location.split('?')[1] || '');
     const search = params.get('search') || '';
-    const category = params.get('category') || '';
+    const category = params.get('category') || 'all';
     
     setSearchQuery(search);
     setSelectedCategory(category);
@@ -41,7 +41,7 @@ export default function Products() {
     queryKey: ["/api/products", { category: selectedCategory, search: searchQuery }],
     queryFn: () => {
       const params = new URLSearchParams();
-      if (selectedCategory) {
+      if (selectedCategory && selectedCategory !== 'all') {
         const category = categories.find(c => c.slug === selectedCategory);
         if (category) {
           params.append('categoryId', category.id.toString());
@@ -51,7 +51,7 @@ export default function Products() {
       const url = `/api/products?${params.toString()}`;
       return fetch(url).then(res => res.json());
     },
-    enabled: !selectedCategory || categories.length > 0,
+    enabled: selectedCategory === 'all' || categories.length > 0,
   });
 
   // Filter and sort products
@@ -81,7 +81,7 @@ export default function Products() {
     // Search is handled by the filter above
   };
 
-  const selectedCategoryName = categories.find(c => c.slug === selectedCategory)?.name || 'All Products';
+  const selectedCategoryName = selectedCategory === 'all' ? 'All Products' : categories.find(c => c.slug === selectedCategory)?.name || 'All Products';
 
   return (
     <div className="min-h-screen bg-background">
@@ -91,7 +91,7 @@ export default function Products() {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            {selectedCategory ? selectedCategoryName : 'All Products'}
+            {selectedCategory === 'all' ? 'All Products' : selectedCategoryName}
           </h1>
           <p className="text-muted-foreground">
             {searchQuery ? `Search results for "${searchQuery}"` : 'Discover our amazing products'}
@@ -120,7 +120,7 @@ export default function Products() {
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category.id} value={category.slug}>
                   {category.name}
@@ -178,7 +178,7 @@ export default function Products() {
                   : "No products available in this category"
                 }
               </p>
-              <Button onClick={() => { setSearchQuery(''); setSelectedCategory(''); }}>
+              <Button onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}>
                 Clear Filters
               </Button>
             </div>
